@@ -72,12 +72,12 @@ void setFreq(int frq){
 }
 
 void HB(){
-//	HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
-
+	HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
 }
 
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc){
-	HB();
+	HAL_ADC_Stop_DMA(hadc);
+//	HB();
 }
 void startPWM(){
 	  HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_1);
@@ -88,7 +88,7 @@ void stopPWM(){
 	  HAL_TIM_PWM_Stop(&htim2, TIM_CHANNEL_3);
 }
 
-int adcBuff[2];
+int adcBuff[4];
 static int onTime;
 static int onTimeCounter;
 static int offTime;
@@ -148,14 +148,17 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
 //	  HAL_Delay(100);
-	  HAL_ADC_Start_DMA(&hadc1, &adcBuff, 2);
-	  setFreq(map(adcBuff[0], 0, 4096, 5000, 12000));
-	  setDuty(map(adcBuff[1], 0, 4096, 10, 47));
-	  onTime = map(adcBuff[2], 0, 4096, 1, 30);
-	  offTime = map(adcBuff[3], 0, 4096, 0, 30);
+	  HAL_ADC_Start_DMA(&hadc1, adcBuff, 4);
+	  setFreq(map(adcBuff[0], 100, 4000, 5000, 12000));
+	  setDuty(map(adcBuff[1], 100, 4000, 10, 47));
+	  onTime = map(adcBuff[2], 100, 4000, 1, 30);
+	  offTime = map(adcBuff[3], 100, 4000, 0, 30);
 	  startPWM();
+	  HB();
 	  HAL_Delay(onTime * 100);
+	  HB();
 	  stopPWM();
+//	  if(offTime)
 	  HAL_Delay(offTime * 100);
 //	  if(onTimeCounter >= onTime){
 //		  stopPWM();
@@ -170,8 +173,6 @@ int main(void)
 //		  onTimeCounter++;
 //		  offTimeCounter = 0;
 //	  }
-
-
   }
   /* USER CODE END 3 */
 }
