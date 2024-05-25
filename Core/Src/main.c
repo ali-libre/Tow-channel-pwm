@@ -79,7 +79,20 @@ void HB(){
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc){
 	HB();
 }
+void startPWM(){
+	  HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_1);
+	  HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_3);
+}
+void stopPWM(){
+	  HAL_TIM_PWM_Stop(&htim2, TIM_CHANNEL_1);
+	  HAL_TIM_PWM_Stop(&htim2, TIM_CHANNEL_3);
+}
+
 int adcBuff[2];
+static int onTime;
+static int onTimeCounter;
+static int offTime;
+static int offTimeCounter;
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -119,8 +132,6 @@ int main(void)
   MX_TIM2_Init();
   MX_ADC1_Init();
   /* USER CODE BEGIN 2 */
-  HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_1);
-  HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_3);
 
   setDuty(44);
   setFreq(9100);
@@ -136,10 +147,31 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-	  HAL_Delay(100);
+//	  HAL_Delay(100);
 	  HAL_ADC_Start_DMA(&hadc1, &adcBuff, 2);
 	  setFreq(map(adcBuff[0], 0, 4096, 5000, 12000));
 	  setDuty(map(adcBuff[1], 0, 4096, 10, 47));
+	  onTime = map(adcBuff[2], 0, 4096, 1, 30);
+	  offTime = map(adcBuff[3], 0, 4096, 0, 30);
+	  startPWM();
+	  HAL_Delay(onTime * 100);
+	  stopPWM();
+	  HAL_Delay(offTime * 100);
+//	  if(onTimeCounter >= onTime){
+//		  stopPWM();
+//	  }else if(offTimeCounter){
+//		  offTimeCounter++;
+//		  onTimeCounter = 0;
+//	  }
+//
+//	  if(offTimeCounter >= offTime){
+//		  startPWM();
+//	  }else if(onTimeCounter){
+//		  onTimeCounter++;
+//		  offTimeCounter = 0;
+//	  }
+
+
   }
   /* USER CODE END 3 */
 }
@@ -216,7 +248,7 @@ static void MX_ADC1_Init(void)
   hadc1.Init.DiscontinuousConvMode = DISABLE;
   hadc1.Init.ExternalTrigConv = ADC_SOFTWARE_START;
   hadc1.Init.DataAlign = ADC_DATAALIGN_RIGHT;
-  hadc1.Init.NbrOfConversion = 2;
+  hadc1.Init.NbrOfConversion = 4;
   if (HAL_ADC_Init(&hadc1) != HAL_OK)
   {
     Error_Handler();
@@ -236,6 +268,24 @@ static void MX_ADC1_Init(void)
   */
   sConfig.Channel = ADC_CHANNEL_5;
   sConfig.Rank = ADC_REGULAR_RANK_2;
+  if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  /** Configure Regular Channel
+  */
+  sConfig.Channel = ADC_CHANNEL_6;
+  sConfig.Rank = ADC_REGULAR_RANK_3;
+  if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  /** Configure Regular Channel
+  */
+  sConfig.Channel = ADC_CHANNEL_7;
+  sConfig.Rank = ADC_REGULAR_RANK_4;
   if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
   {
     Error_Handler();
